@@ -43,12 +43,4 @@ tests/                     test_core.js, test_tracking.js, test_export.js (Node)
 - Video thật dạng webm 1280×720, 60 fps, có nhòe và nhiễu: g đo được 9,79 ± 0,11 m/s² (mô phỏng 9,81).
 - Điện thoại 390×844 (cảm ứng), offline sau lần mở đầu, xuất XLSX/CSV/JSON/ZIP/PDF, lưu và mở lại dự án (kèm video).
 
-## Giới hạn cần biết
-- Mới thử trên Chromium. Safari/iOS và Firefox chưa được thử; Firefox không có `requestVideoFrameCallback` nên phải nhập FPS tay (app sẽ nhắc).
-- Chưa có nhận diện vật bằng mô hình AI (TensorFlow.js…): thay vào đó có theo màu và gợi ý bằng phát hiện chuyển động. Có thể thêm sau mà không đổi kiến trúc.
-- “Xuất PDF” dùng hộp thoại in của trình duyệt (chọn “Lưu dưới dạng PDF”).
-- Phối cảnh/méo ống kính chỉ được cảnh báo và ước lượng thô, không hiệu chỉnh tự động. Camera phải cố định, vật chuyển động gần mặt phẳng đặt thước.
-- Video quay từ trình duyệt (MediaRecorder) có thể có FPS không cố định: luôn kiểm tra FPS ở Bước 2.
 
-## Khóa mật khẩu (tùy chọn)
-`src/app/gate.js` hiện màn hình nhập mật khẩu trước khi dùng app. Đây là **khóa mềm** chỉ chặn truy cập thông thường, không phải bảo mật thật (ai xem được mã nguồn vẫn vượt qua được). Mật khẩu không nằm trong mã, chỉ có bản băm SHA-256 có muối. Đổi mật khẩu/tắt khóa: xem hướng dẫn ở đầu `gate.js`. Nút “🔒 Khóa” trên thanh trên cùng để khóa lại thiết bị.
