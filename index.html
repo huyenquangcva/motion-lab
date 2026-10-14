@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b4fd6">
+<meta name="description" content="Physics Motion Lab – phân tích chuyển động thật từ video cho Vật lí THPT. Xử lý hoàn toàn trên thiết bị.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Physics Motion Lab – Phòng thí nghiệm chuyển động</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+<script src="src/app/gate.js"></script>
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="11" fill="#0b4fd6"/><path d="M8 38 Q24 -4 40 38" fill="none" stroke="#fff" stroke-width="3"/><circle cx="16" cy="22.2" r="3" fill="#ffd54a"/><circle cx="24" cy="17" r="3" fill="#ffd54a"/><circle cx="32" cy="22.2" r="3" fill="#ffd54a"/></svg>
+    <div><h1>PHYSICS MOTION LAB</h1><p>Phòng thí nghiệm chuyển động – Vật lí THPT</p></div>
+  </div>
+  <div class="top-actions">
+    <label class="sr" for="expSel">Thí nghiệm</label>
+    <select id="expSel" title="Chọn thí nghiệm"></select>
+    <button id="btnProject" class="btn ghost" type="button">📁 Dự án</button>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- ============ CỘT TRÁI: VIDEO ============ -->
+  <section class="stage-col" aria-label="Khu vực video">
+    <div class="stage" id="stage">
+      <canvas id="view"></canvas>
+      <canvas id="loupe" width="120" height="120" hidden></canvas>
+      <div id="stageHint" class="hint">Hãy chọn hoặc quay một video ở Bước 1, hoặc dùng video mẫu.</div>
+      <div class="zoom-btns">
+        <button id="btnZoomIn" class="btn icon" type="button" aria-label="Phóng to">＋</button>
+        <button id="btnZoomOut" class="btn icon" type="button" aria-label="Thu nhỏ">－</button>
+        <button id="btnFit" class="btn icon" type="button" aria-label="Vừa khung">⤢</button>
+      </div>
+    </div>
+    <div class="transport">
+      <div class="tbtns">
+        <button id="btnFirst" class="btn icon" type="button" aria-label="Về đầu">⏮</button>
+        <button id="btnPrev" class="btn icon" type="button" aria-label="Frame trước">◀︎</button>
+        <button id="btnPlay" class="btn icon primary" type="button" aria-label="Phát / Dừng">▶</button>
+        <button id="btnNext" class="btn icon" type="button" aria-label="Frame sau">▶︎</button>
+        <button id="btnLast" class="btn icon" type="button" aria-label="Đến cuối">⏭</button>
+        <select id="speedSel" aria-label="Tốc độ phát">
+          <option value="0.25">0,25×</option><option value="0.5">0,5×</option><option value="1" selected>1×</option><option value="2">2×</option>
+        </select>
+      </div>
+      <input id="timeline" type="range" min="0" max="0" value="0" step="1" aria-label="Thanh thời gian">
+      <div id="frameInfo" class="frame-info">Chưa có video</div>
+    </div>
+    <details class="layers" open>
+      <summary>Lớp hiển thị trên video</summary>
+      <div class="layer-grid">
+        <label><input type="checkbox" id="lyPoint" checked> Điểm vật thể</label>
+        <label><input type="checkbox" id="lyTraj" checked> Quỹ đạo</label>
+        <label><input type="checkbox" id="lyAxes" checked> Hệ trục Oxy</label>
+        <label><input type="checkbox" id="lyCalib" checked> Đoạn chuẩn</label>
+        <label><input type="checkbox" id="lyVel" checked> Vector vận tốc</label>
+        <label><input type="checkbox" id="lyAcc"> Vector gia tốc</label>
+        <label><input type="checkbox" id="lyTime" checked> Nhãn thời gian</label>
+      </div>
+      <div class="vec-scales">
+        <label>Độ dài vector v <input id="vecV" type="range" min="0.02" max="1" step="0.01" value="0.2"></label>
+        <label>Độ dài vector a <input id="vecA" type="range" min="0.005" max="0.2" step="0.005" value="0.03"></label>
+      </div>
+    </details>
+  </section>
+
+  <!-- ============ CỘT PHẢI: CÁC BƯỚC ============ -->
+  <section class="panel-col" aria-label="Các bước phân tích">
+    <nav class="steps" id="steps" aria-label="Quy trình 7 bước">
+      <button type="button" data-step="1"><b>1</b><span>Video</span></button>
+      <button type="button" data-step="2"><b>2</b><span>Hiệu chuẩn</span></button>
+      <button type="button" data-step="3"><b>3</b><span>Theo dõi</span></button>
+      <button type="button" data-step="4"><b>4</b><span>Số liệu</span></button>
+      <button type="button" data-step="5"><b>5</b><span>Đồ thị</span></button>
+      <button type="button" data-step="6"><b>6</b><span>Phân tích</span></button>
+      <button type="button" data-step="7"><b>7</b><span>Báo cáo</span></button>
+    </nav>
+
+    <!-- BƯỚC 1 -->
+    <div class="panel" data-step="1">
+      <h2>Bước 1 · Chọn video</h2>
+      <div id="dropZone" class="drop">
+        <p>Kéo thả video vào đây hoặc</p>
+        <div class="row wrap">
+          <label class="btn primary big" for="fileInput">📂 Chọn video từ thiết bị</label>
+          <input id="fileInput" type="file" accept="video/*" hidden>
+          <button id="btnCam" class="btn big" type="button">🎥 Quay video thí nghiệm</button>
+        </div>
+      </div>
+      <div id="camPanel" class="card" hidden>
+        <h3>Quay video thí nghiệm</h3>
+        <video id="camPreview" playsinline muted autoplay></video>
+        <div class="row wrap">
+          <select id="camSel" aria-label="Chọn camera"><option value="environment">Camera sau (khuyên dùng)</option><option value="user">Camera trước</option></select>
+          <button id="btnRec" class="btn danger big" type="button">⏺ Bắt đầu quay</button>
+          <button id="btnCamClose" class="btn" type="button">Đóng camera</button>
+        </div>
+        <p id="camStatus" class="muted"></p>
+        <ul class="tips">
+          <li>Đặt camera cố định (dùng giá đỡ hoặc tựa vào vật chắc chắn).</li>
+          <li>Đặt vật chuẩn có kích thước đã biết trong cùng mặt phẳng chuyển động.</li>
+          <li>Tránh rung máy. Đảm bảo đủ ánh sáng, nền đơn giản, vật nổi bật so với nền.</li>
+          <li>Nếu quay chậm (slow-motion), nhớ nhập FPS thật ở Bước 2.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Video mẫu để thử toàn bộ quy trình</h3>
+        <div class="row wrap">
+          <select id="demoSel" aria-label="Chọn cảnh mẫu"></select>
+        </div>
+        <div class="row wrap">
+          <button id="btnDemoVideo" class="btn" type="button">🎞 Tải video mẫu giả lập</button>
+          <button id="btnDemoData" class="btn" type="button">📊 Dữ liệu mẫu (đã chấm sẵn)</button>
+          <button id="btnSelfTest" class="btn" type="button">✅ Tự kiểm tra quy trình</button>
+        </div>
+        <label class="inline">Nhiễu vị trí của dữ liệu mẫu (px): <input id="noiseInput" class="num" type="text" inputmode="decimal" value="0,6"></label>
+        <p class="muted">Video mẫu là cảnh giả lập có đáp số biết trước (ví dụ x = 0,5 + 1,2t + 0,8t²) để kiểm tra phần mềm. Số liệu mẫu <b>không phải</b> số đo thực nghiệm.</p>
+      </div>
+      <div id="videoInfo" class="card muted" hidden></div>
+      <div id="expCard" class="card exp"></div>
+      <div class="nav"><span></span><button class="btn primary next" type="button" data-go="2">Tiếp: Hiệu chuẩn →</button></div>
+    </div>
+
+    <!-- BƯỚC 2 -->
+    <div class="panel" data-step="2" hidden>
+      <h2>Bước 2 · Hiệu chuẩn</h2>
+      <div class="card">
+        <h3>① Thời gian</h3>
+        <div class="row wrap">
+          <label class="inline">FPS: <input id="fpsInput" class="num" type="text" inputmode="decimal" value="30"></label>
+          <button id="btnDetectFps" class="btn" type="button">Đo lại FPS</button>
+        </div>
+        <p id="fpsInfo" class="muted"></p>
+        <label class="inline"><input type="checkbox" id="tZero" checked> Lấy t = 0 tại điểm đo đầu tiên</label>
+        <p class="formula">t = n / FPS</p>
+      </div>
+      <div class="card">
+        <h3>② Đoạn chuẩn (khoảng cách)</h3>
+        <p class="muted">Bấm nút, rồi chạm vào hai đầu A và B của một vật có độ dài đã biết (ví dụ thước 1 m) nằm trong cùng mặt phẳng chuyển động.</p>
+        <div class="row wrap">
+          <button id="btnCalibPick" class="btn primary" type="button">Chọn điểm A và B trên video</button>
+        </div>
+        <div class="row wrap">
+          <label class="inline">Khoảng cách thật AB = <input id="calibDist" class="num" type="text" inputmode="decimal" value="1"></label>
+          <select id="calibUnit" aria-label="Đơn vị đoạn chuẩn"><option value="m">m</option><option value="cm">cm</option><option value="mm">mm</option></select>
+        </div>
+        <p id="calibInfo" class="result"></p>
+        <label class="inline">Hoặc nhập tay tỉ lệ (pixel/m): <input id="scaleManual" class="num" type="text" inputmode="decimal" placeholder="—"></label>
+      </div>
+      <div class="card">
+        <h3>③ Hệ tọa độ Oxy</h3>
+        <div class="row wrap">
+          <button id="btnOrigin" class="btn" type="button">Chọn gốc O</button>
+          <button id="btnAxisDir" class="btn" type="button">Chọn hướng Ox</button>
+          <button id="btnResetAxes" class="btn ghost" type="button">Đặt lại</button>
+        </div>
+        <div class="row wrap">
+          <label class="inline">Góc quay trục Ox (°): <input id="axisAngle" class="num" type="text" inputmode="decimal" value="0"></label>
+          <label class="inline"><input type="checkbox" id="flipX"> Đảo chiều Ox</label>
+          <label class="inline"><input type="checkbox" id="flipY"> Đảo chiều Oy</label>
+        </div>
+        <p id="axisInfo" class="muted"></p>
+        <p class="formula">y<sub>vật lí</sub> = y<sub>gốc</sub> − y<sub>pixel</sub> (Oy hướng lên)</p>
+      </div>
+      <div class="nav"><button class="btn" type="button" data-go="1">← Video</button><button class="btn primary next" type="button" data-go="3">Tiếp: Theo dõi →</button></div>
+    </div>
+
+    <!-- BƯỚC 3 -->
+    <div class="panel" data-step="3" hidden>
+      <h2>Bước 3 · Xác định và theo dõi vật</h2>
+      <div class="card">
+        <h3>Cách làm</h3>
+        <ol class="tips">
+          <li>Tua đến frame bắt đầu, <b>chạm vào tâm vật</b> trên video để chấm điểm đầu.</li>
+          <li>Chọn phương pháp bên dưới. Với thủ công: tiếp tục chạm ở các frame sau (tự chuyển frame).</li>
+          <li>Với tự động: bấm “Theo dõi tự động”. Nếu mất dấu, chấm lại bằng tay rồi chạy tiếp.</li>
+        </ol>
+        <label class="inline">Phương pháp:
+          <select id="trkMethod">
+            <option value="manual">1. Thủ công (chạm từng frame)</option>
+            <option value="template" selected>2. Bán tự động – so khớp mẫu (NCC, dưới pixel)</option>
+            <option value="color">3. Tự động – theo màu vật</option>
+          </select>
+        </label>
+        <div class="row wrap">
+          <label class="inline">Bước (frame): <input id="trkStep" class="num" type="text" inputmode="numeric" value="1"></label>
+          <label class="inline">Đến frame: <input id="trkEnd" class="num" type="text" inputmode="numeric" value="0"></label>
+        </div>
+        <details>
+          <summary>Tham số nâng cao</summary>
+          <div class="row wrap">
+            <label class="inline">Vùng tìm (px): <input id="trkRadius" class="num" type="text" inputmode="numeric" value="40"></label>
+            <label class="inline">Cỡ mẫu (px): <input id="trkTplSize" class="num" type="text" inputmode="numeric" value="28"></label>
+            <label class="inline">Ngưỡng khớp: <input id="trkThr" class="num" type="text" inputmode="decimal" value="0,55"></label>
+            <label class="inline">Dung sai màu: <input id="colorTol" class="num" type="text" inputmode="numeric" value="28"></label>
+          </div>
+          <label class="inline"><input type="checkbox" id="trkUpdate"> Cập nhật mẫu theo thời gian (khuyên dùng: vật nhòe, xoay hoặc đổi hình dạng)</label>
+          <label class="inline"><input type="checkbox" id="autoAdv" checked> Thủ công: tự chuyển sang frame kế tiếp sau khi chấm</label>
+        </details>
+        <div class="row wrap">
+          <button id="btnTrkStart" class="btn primary big" type="button">▶ Theo dõi tự động từ frame hiện tại</button>
+          <button id="btnTrkStop" class="btn danger" type="button" hidden>■ Dừng</button>
+        </div>
+        <progress id="trkProg" value="0" max="100" hidden></progress>
+        <p id="trkMsg" class="muted"></p>
+        <div class="row wrap">
+          <button id="btnSuggest" class="btn" type="button">🔍 Gợi ý vị trí vật (phát hiện chuyển động)</button>
+          <button id="btnUndo" class="btn" type="button">↶ Xóa điểm cuối</button>
+          <button id="btnDelPoint" class="btn" type="button">Xóa điểm ở frame này</button>
+          <button id="btnClearPts" class="btn ghost" type="button">Xóa tất cả</button>
+        </div>
+        <p id="pointCount" class="result"></p>
+      </div>
+      <div class="nav"><button class="btn" type="button" data-go="2">← Hiệu chuẩn</button><button class="btn primary next" type="button" data-go="4">Tiếp: Số liệu →</button></div>
+    </div>
+
+    <!-- BƯỚC 4 -->
+    <div class="panel" data-step="4" hidden>
+      <h2>Bước 4 · Bảng số liệu</h2>
+      <div class="card">
+        <div class="row wrap">
+          <label class="inline">Từ frame <input id="anFrom" class="num" type="text" inputmode="numeric"></label>
+          <label class="inline">đến <input id="anTo" class="num" type="text" inputmode="numeric"></label>
+          <label class="inline">lấy 1 frame/<input id="anStep" class="num" type="text" inputmode="numeric" value="1"></label>
+        </div>
+        <div class="row wrap">
+          <label class="inline">Tính v, a bằng:
+            <select id="anMethod">
+              <option value="diff">Sai phân trung tâm</option>
+              <option value="smooth">Làm trơn (trung bình trượt) rồi sai phân</option>
+              <option value="local" selected>Hồi quy bậc hai cục bộ</option>
+              <option value="global">Hồi quy bậc hai toàn đoạn (a không đổi)</option>
+            </select>
+          </label>
+          <label class="inline">Cửa sổ <input id="anWin" class="num" type="text" inputmode="numeric" value="5"> điểm</label>
+          <label class="inline">Đơn vị
+            <select id="dispUnit"><option value="m">m</option><option value="cm">cm</option><option value="mm">mm</option></select>
+          </label>
+        </div>
+        <div class="row wrap">
+          <button id="btnOutlier" class="btn" type="button">Tự động loại điểm lệch</button>
+          <button id="btnRestore" class="btn ghost" type="button">Khôi phục tất cả điểm</button>
+          <button id="btnCsvQuick" class="btn" type="button">⬇ CSV</button>
+        </div>
+        <p class="formula">v<sub>i</sub> = (x<sub>i+1</sub> − x<sub>i−1</sub>)/(t<sub>i+1</sub> − t<sub>i−1</sub>) &nbsp;·&nbsp; a = Δv/Δt &nbsp;·&nbsp; v = √(v<sub>x</sub>² + v<sub>y</sub>²)</p>
+        <p id="dataSummary" class="muted"></p>
+      </div>
+      <div class="table-wrap"><table id="dataTable"><thead></thead><tbody></tbody></table></div>
+      <div class="nav"><button class="btn" type="button" data-go="3">← Theo dõi</button><button class="btn primary next" type="button" data-go="5">Tiếp: Đồ thị →</button></div>
+    </div>
+
+    <!-- BƯỚC 5 -->
+    <div class="panel" data-step="5" hidden>
+      <h2>Bước 5 · Đồ thị</h2>
+      <p class="muted">Cuộn / chụm hai ngón để zoom, kéo để di chuyển, nhấp đúp để đặt lại, chạm vào điểm để chọn (video sẽ nhảy tới frame tương ứng).</p>
+      <div id="plotGrid" class="plot-grid"></div>
+      <div class="nav"><button class="btn" type="button" data-go="4">← Số liệu</button><button class="btn primary next" type="button" data-go="6">Tiếp: Phân tích →</button></div>
+    </div>
+
+    <!-- BƯỚC 6 -->
+    <div class="panel" data-step="6" hidden>
+      <h2>Bước 6 · Phân tích vật lí</h2>
+      <div class="card">
+        <div class="row wrap">
+          <label class="inline">Đại lượng khảo sát:
+            <select id="anCoord"><option value="auto">Tự chọn theo thí nghiệm</option><option value="x">x (theo phương ngang)</option><option value="y">y (theo phương thẳng đứng)</option><option value="s">s (dọc quỹ đạo)</option></select>
+          </label>
+          <label class="inline">Mô hình:
+            <select id="anModel"><option value="auto">Tự chọn</option><option value="linear">Tuyến tính  q = a + bt</option><option value="quad">Bậc hai  q = a + bt + ct²</option><option value="free">Rơi tự do  y = y₀ + v₀t − ½gt²</option><option value="sine">Hình sin  q = A sin(ωt) + B cos(ωt) + C</option></select>
+          </label>
+          <label class="inline">g lí thuyết (m/s²): <input id="gTheory" class="num" type="text" inputmode="decimal" value="9,81"></label>
+        </div>
+      </div>
+      <div id="classBox" class="card"></div>
+      <div id="modelBox" class="card"></div>
+      <div id="assistBox" class="card assist"></div>
+      <div class="card" id="errCard">
+        <h3>Phân tích sai số</h3>
+        <div class="row wrap">
+          <label class="inline">Độ lệch xác định tâm vật (px): <input id="errPx" class="num" type="text" inputmode="decimal" value="1"></label>
+          <label class="inline">Độ chính xác thước (mm): <input id="errRuler" class="num" type="text" inputmode="decimal" value="1"></label>
+          <label class="inline">Sai số FPS (%): <input id="errFps" class="num" type="text" inputmode="decimal" value="0,5"></label>
+        </div>
+        <div class="row wrap">
+          <label class="inline">Khoảng cách camera – vật (m): <input id="errCamDist" class="num" type="text" inputmode="decimal" placeholder="tùy chọn"></label>
+          <label class="inline">Vật lệch khỏi mặt phẳng thước (m): <input id="errDepth" class="num" type="text" inputmode="decimal" placeholder="tùy chọn"></label>
+        </div>
+        <div id="errBox"></div>
+      </div>
+      <div class="nav"><button class="btn" type="button" data-go="5">← Đồ thị</button><button class="btn primary next" type="button" data-go="7">Tiếp: Báo cáo →</button></div>
+    </div>
+
+    <!-- BƯỚC 7 -->
+    <div class="panel" data-step="7" hidden>
+      <h2>Bước 7 · Báo cáo và xuất dữ liệu</h2>
+      <div class="card">
+        <label class="inline block">Tên thí nghiệm / tiêu đề báo cáo: <input id="repTitle" class="wide" type="text" placeholder="Ví dụ: Khảo sát chuyển động của xe đồ chơi"></label>
+        <label class="inline block">Ghi chú (không nhập thông tin cá nhân của học sinh): <textarea id="repNote" rows="2"></textarea></label>
+        <div class="row wrap">
+          <button id="btnPDF" class="btn primary" type="button">🖨 Xuất PDF (in)</button>
+          <button id="btnXLSX" class="btn" type="button">📗 Excel</button>
+          <button id="btnCSV" class="btn" type="button">📄 CSV</button>
+          <button id="btnPNGs" class="btn" type="button">🖼 PNG đồ thị</button>
+          <button id="btnJSON" class="btn" type="button">{ } JSON dự án</button>
+        </div>
+        <p class="muted">PDF: hộp thoại in mở ra, chọn “Lưu dưới dạng PDF”.</p>
+      </div>
+      <div id="reportPreview" class="report"></div>
+      <div class="nav"><button class="btn" type="button" data-go="6">← Phân tích</button><span></span></div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">Dữ liệu video được xử lý ngay trên thiết bị của bạn, không gửi lên máy chủ. · Kết quả thực nghiệm luôn có sai số.</footer>
+</div>
+
+<!-- Hộp thoại dự án -->
+<dialog id="dlgProject">
+  <form method="dialog" class="dlg">
+    <h3>Dự án</h3>
+    <label class="inline block">Tên dự án: <input id="projName" class="wide" type="text" placeholder="Tên dự án"></label>
+    <label class="inline"><input type="checkbox" id="projWithVideo" checked> Lưu kèm video (chiếm dung lượng trên thiết bị)</label>
+    <div class="row wrap">
+      <button id="btnSaveProj" class="btn primary" type="button">💾 Lưu dự án</button>
+      <label class="btn" for="importJSON">Nhập JSON…</label><input id="importJSON" type="file" accept=".json,application/json" hidden>
+    </div>
+    <div id="projList" class="proj-list"></div>
+    <div class="row"><button class="btn" value="close">Đóng</button></div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" hidden></div>
+<div id="printArea"></div>
+<video id="vid" playsinline muted preload="auto" style="position:fixed;left:-9999px;width:2px;height:2px;opacity:0"></video>
+
+<script src="src/utils/math.js"></script>
+<script src="src/calibration/calibration.js"></script>
+<script src="src/physics/kinematics.js"></script>
+<script src="src/physics/assistant.js"></script>
+<script src="src/tracking/tracking.js"></script>
+<script src="src/video/video.js"></script>
+<script src="src/charts/plot.js"></script>
+<script src="src/export/exporter.js"></script>
+<script src="src/storage/storage.js"></script>
+<script src="src/app/core.js"></script>
+<script src="src/app/stage.js"></script>
+<script src="src/tracking/runner.js"></script>
+<script src="src/app/panels.js"></script>
+<script src="src/app/report.js"></script>
+<script src="src/app/selftest.js"></script>
+<script src="src/app/main.js"></script>
+</body>
+</html>
